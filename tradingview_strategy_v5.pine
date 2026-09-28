@@ -1,0 +1,99 @@
+//@version=5
+strategy("BIST 360 Alpha & Momentum Scalper [TradingView v5]", overlay=true, initial_capital=100000, default_qty_type=strategy.percent_of_equity, default_qty_value=30, commission_type=strategy.commission.percent, commission_value=0.1)
+
+// ==========================================
+// 1. GİRİŞ PARAMETRELERİ (Ayarlar)
+// ==========================================
+grp_trend = "Trend & Rejim Ayarları"
+fast_ema_len = input.int(21, "Hızlı EMA Periyodu", group=grp_trend)
+slow_ema_len = input.int(50, "Yavaş EMA Periyodu", group=grp_trend)
+macro_ema_len = input.int(200, "Makro Trend EMA (200)", group=grp_trend)
+
+grp_st = "SuperTrend Ayarları"
+st_period = input.int(10, "SuperTrend ATR Periyodu", group=grp_st)
+st_mult = input.float(2.5, "SuperTrend Çarpanı", step=0.1, group=grp_st)
+
+grp_risk = "Risk & Kâr Yönetimi (Aylık %20 Hedef Modeli)"
+stop_loss_pct = input.float(1.8, "Zarar Kes (Stop-Loss) %", step=0.1, group=grp_risk)
+take_profit_pct = input.float(4.5, "Hedef Kâr (Take-Profit) %", step=0.5, group=grp_risk)
+use_trailing = input.bool(true, "Dinamik İz Süren Stop Kullan", group=grp_risk)
+trail_offset_pct = input.float(2.0, "İz Süren Stop Mesafesi %", step=0.2, group=grp_risk)
+
+grp_webhook = "Python Bot Webhook Ayarları"
+webhook_pass = input.string("BIST_SECRET_KEY_123", "Güvenlik Şifresi (Passphrase)", group=grp_webhook)
+
+// ==========================================
+// 2. İNDİKATÖR HESAPLAMALARI
+// ==========================================
+ema_fast = ta.ema(close, fast_ema_len)
+ema_slow = ta.ema(close, slow_ema_len)
+ema_macro = ta.ema(close, macro_ema_len)
+
+// SuperTrend
+[st_value, st_dir] = ta.supertrend(st_mult, st_period)
+
+// Hacim Onayı
+vol_ma = ta.sma(volume, 20)
+vol_ok = volume >= (vol_ma * 1.25)
+
+// ADX Trend Gücü
+[di_plus, di_minus, adx] = ta.dmi(14, 14)
+is_trending = adx >= 18.0
+
+// ==========================================
+// 3. AL & SAT ŞARTLARI
+// ==========================================
+// AL: SuperTrend Boğa VE Fiyat > EMA 200 VE Hızlı EMA > Yavaş EMA VE Hacim Onayı
+bull_trend = (close > ema_macro) and (ema_fast > ema_slow) and (st_dir == -1)
+fresh_buy = bull_trend and (st_dir[1] == 1 or ta.crossover(close, ema_fast)) and vol_ok and is_trending
+
+// SAT / Çıkış: SuperTrend Ayıya Döndü veya Fiyat EMA 50 Altına Sarktı
+bear_trend = (st_dir == 1 and st_dir[1] == -1) or ta.crossunder(close, ema_slow)
+
+// ==========================================
+// 4. STRATEJİ VE EMİR YÖNETİMİ
+// ==========================================
+// Webhook JSON Mesaj Formatı
+buy_payload = '{"passphrase": "' + webhook_pass + '", "ticker": "' + syminfo.ticker + '", "action": "BUY", "price": ' + str.tostring(close) + ', "stop_loss": ' + str.tostring(close * (1 - stop_loss_pct/100)) + ', "take_profit": ' + str.tostring(close * (1 + take_profit_pct/100)) + '}'
+sell_payload = '{"passphrase": "' + webhook_pass + '", "ticker": "' + syminfo.ticker + '", "action": "SELL", "price": ' + str.tostring(close) + '}'
+
+if (fresh_buy and strategy.position_size == 0)
+    strategy.entry("Long_Entry", strategy.long, alert_message=buy_payload)
+
+// Kâr Al & Stop Seviyeleri
+long_stop = strategy.position_avg_price * (1 - stop_loss_pct / 100)
+long_tp = strategy.position_avg_price * (1 + take_profit_pct / 100)
+
+if (strategy.position_size > 0)
+    if (use_trailing)
+        strategy.exit("Exit_Long", "Long_Entry", stop=long_stop, limit=long_tp, trail_points=close * (trail_offset_pct/100) / syminfo.mintick, trail_offset=close * 0.005 / syminfo.mintick, alert_message=sell_payload)
+    else
+        strategy.exit("Exit_Long", "Long_Entry", stop=long_stop, limit=long_tp, alert_message=sell_payload)
+
+if (bear_trend and strategy.position_size > 0)
+    strategy.close("Long_Entry", comment="Trend_Bitti", alert_message=sell_payload)
+
+// ==========================================
+// 5. GÖRSELLEŞTİRME & GRAFİK ARAYÜZÜ
+// ==========================================
+plot(ema_fast, "Hızlı EMA (21)", color=color.orange, linewidth=1)
+plot(ema_slow, "Yavaş EMA (50)", color=color.blue, linewidth=2)
+plot(ema_macro, "Makro EMA (200)", color=color.gray, linewidth=2)
+
+plot(st_dir == -1 ? st_value : na, "SuperTrend Boğa", color=color.green, style=plot.style_linebr, linewidth=2)
+plot(st_dir == 1 ? st_value : na, "SuperTrend Ayı", color=color.red, style=plot.style_linebr, linewidth=2)
+
+plotshape(fresh_buy and strategy.position_size == 0, "AL Sinyali", shape.triangleup, location.belowbar, color.green, size=size.small, text="AL 🚀")
+plotshape(bear_trend and strategy.position_size[1] > 0, "SAT Sinyali", shape.triangledown, location.abovebar, color.red, size=size.small, text="SAT 🛑")
+
+// Bilgi Paneli
+var table info_table = table.new(position.top_right, 2, 4, bgcolor=color.new(color.black, 20), border_color=color.gray, border_width=1)
+if barstate.islast
+    table.cell(info_table, 0, 0, "BIST Scalp 360", text_color=color.yellow, text_size=size.small)
+    table.cell(info_table, 1, 0, "Durum", text_color=color.yellow, text_size=size.small)
+    table.cell(info_table, 0, 1, "Sinyal", text_color=color.white, text_size=size.small)
+    table.cell(info_table, 1, 1, strategy.position_size > 0 ? "LONG (AÇIK) 🟢" : "NAKİTTE (İZLE) ⚪", text_color=strategy.position_size > 0 ? color.green : color.white, text_size=size.small)
+    table.cell(info_table, 0, 2, "Trend Rejimi", text_color=color.white, text_size=size.small)
+    table.cell(info_table, 1, 2, close > ema_macro ? "Boğa (EMA 200 Üstü)" : "Ayı (EMA 200 Altı)", text_color=close > ema_macro ? color.green : color.red, text_size=size.small)
+    table.cell(info_table, 0, 3, "ADX Gücü", text_color=color.white, text_size=size.small)
+    table.cell(info_table, 1, 3, str.tostring(adx, "#.#") + (adx >= 20 ? " (Trend)" : " (Testere)"), text_color=adx >= 20 ? color.green : color.yellow, text_size=size.small)
