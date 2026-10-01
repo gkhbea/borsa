@@ -117,16 +117,46 @@ def broadcast_signal_alert(ticker: str, signal_type: str, price: float, reason: 
     """
     send_email_notification(f"[{signal_type}] {ticker} - BIST 360 Sinyal Uyarısı", html_content, short_msg)
 
-def broadcast_pre_market_bulletin(report_df_rows):
-    """Saat 09:30 bültenini hem ekrana hem de e-postaya iletir."""
-    title = "☀️ 09:30 BIST Seans Bülteni Hazır!"
+def broadcast_pre_market_bulletin(report_df_rows, macro=None, balance_sheets=None):
+    """Saat 09:30 bültenini hem ekrana hem de e-postaya iletir (Makro & Bilanço Destekli)."""
+    title = "☀️ 09:30 BIST Seans Bülteni & Broker Raporu"
     top_tickers = [r.get("Hisse", "") for r in report_df_rows[:3]]
-    msg = f"Bugünün Pusu Hisseleri: {', '.join(top_tickers)} | 100k TL Dağılımı Hazır"
+    msg = f"Gündem: {macro.get('regime', 'Piyasa')} | Pusu: {', '.join(top_tickers)} (%10 Kuralı)" if macro else f"Bugünün Pusu Hisseleri: {', '.join(top_tickers)}"
 
     # 1. Ekrana Sesli Bildirim
     send_desktop_notification(title, msg)
 
-    # 2. HTML Tablo Oluşturma
+    # 2. Makro Bölümü HTML
+    macro_html = ""
+    if macro:
+        m = macro.get("metrics", {})
+        xu = m.get("XU100", {})
+        usd = m.get("USDTRY", {})
+        brent = m.get("BRENT", {})
+        gold = m.get("ALTIN", {})
+
+        macro_html = f"""
+        <div style="background: #0f172a; border-radius: 8px; padding: 16px; margin-bottom: 20px; border-left: 4px solid #38bdf8;">
+            <h3 style="margin-top: 0; color: #38bdf8; font-size: 16px;">🌍 Broker Makro & Piyasa İklimi</h3>
+            <p style="margin: 4px 0; font-size: 14px; color: #f8fafc;">
+                <strong>Endeks Regimi:</strong> <span style="color: #4ade80;">{macro.get('regime')}</span>
+            </p>
+            <p style="margin: 6px 0; font-size: 13px; color: #cbd5e1;">
+                <strong>Broker Görüşü:</strong> {macro.get('broker_verdict')}
+            </p>
+            <p style="margin: 6px 0; font-size: 13px; color: #94a3b8;">
+                <strong>Sektörel Dinamik:</strong> {macro.get('sector_note')}
+            </p>
+            <div style="display: flex; gap: 10px; margin-top: 10px; font-size: 12px; color: #cbd5e1;">
+                <span><strong>BIST 100:</strong> {xu.get('last', 0):,.0f} ({xu.get('change_pct', 0):+0.2f}%)</span> |
+                <span><strong>Dolar/TL:</strong> {usd.get('last', 0):.2f} ({usd.get('change_pct', 0):+0.2f}%)</span> |
+                <span><strong>Brent:</strong> ${brent.get('last', 0):.2f} ({brent.get('change_pct', 0):+0.2f}%)</span> |
+                <span><strong>Ons Altın:</strong> ${gold.get('last', 0):,.0f}</span>
+            </div>
+        </div>
+        """
+
+    # 3. HTML Tablo Oluşturma
     table_rows_html = ""
     for r in report_df_rows:
         table_rows_html += f"""
@@ -135,24 +165,26 @@ def broadcast_pre_market_bulletin(report_df_rows):
             <td style="padding: 10px; color: #cbd5e1;">{r.get('Öncelik', '')}</td>
             <td style="padding: 10px; font-weight: bold; color: #f8fafc;">{r.get('Pusu Fiyatı', '')}</td>
             <td style="padding: 10px; color: #a7f3d0;">{r.get('Lot', '')}</td>
-            <td style="padding: 10px; color: #fcd34d;">{r.get('Tutar', '')}</td>
+            <td style="padding: 10px; color: #fcd34d;">{r.get('Tutar (%10)', r.get('Tutar', ''))}</td>
             <td style="padding: 10px; color: #f87171; font-weight: bold;">{r.get('Zarar Kes (Stop)', '')}</td>
             <td style="padding: 10px; color: #4ade80; font-weight: bold;">{r.get('Hedef 1 (+%6-8)', '')}</td>
             <td style="padding: 10px; color: #34d399; font-weight: bold;">{r.get('Hedef 2 (+%15)', '')}</td>
+            <td style="padding: 10px; color: #f59e0b; font-weight: bold;">{r.get('Çıkış', '⚡ Anında')}</td>
             <td style="padding: 10px; color: #93c5fd;">{r.get('360 Skor', '')}</td>
-            <td style="padding: 10px; color: #e2e8f0;">{r.get('Para Akışı', '')}</td>
         </tr>
         """
 
     html_email = f"""
     <html>
     <body style="font-family: Arial, sans-serif; background-color: #0f172a; color: #f8fafc; padding: 20px;">
-        <div style="max-width: 850px; margin: auto; background: #1e293b; border-radius: 12px; padding: 24px; border: 1px solid #334155;">
-            <h2 style="color: #38bdf8; margin-top: 0;">☀️ BIST 360 - 09:30 Seans Öncesi Bülteni</h2>
+        <div style="max-width: 900px; margin: auto; background: #1e293b; border-radius: 12px; padding: 24px; border: 1px solid #334155;">
+            <h2 style="color: #38bdf8; margin-top: 0;">☀️ BIST 360 - Kıdemli Broker Seans Raporu</h2>
             <p style="color: #94a3b8; font-size: 14px;">
-                Portföy: 100.000 TL | Maksimum %10 Kuralı: Hisse Başına 10.000 TL | Maksimum Risk Koruması
+                Portföy: 100.000 TL | Maksimum %10 Kuralı (10.000 TL / Hisse) | Elit Likidite & Anında Çıkış
             </p>
-            <table style="width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 13px;">
+            {macro_html}
+            <h3 style="color: #f8fafc; font-size: 15px; margin-top: 20px;">🎯 Seçici A+ Pusu Seviyeleri (Zorlama Yok, En Fazla 1-2 Hisse):</h3>
+            <table style="width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 13px;">
                 <thead>
                     <tr style="background: #0f172a; color: #94a3b8; text-transform: uppercase;">
                         <th style="padding: 10px;">Hisse</th>
@@ -163,24 +195,24 @@ def broadcast_pre_market_bulletin(report_df_rows):
                         <th style="padding: 10px;">Stop-Loss</th>
                         <th style="padding: 10px;">Hedef 1</th>
                         <th style="padding: 10px;">Hedef 2</th>
+                        <th style="padding: 10px;">Çıkış</th>
                         <th style="padding: 10px;">360 Skor</th>
-                        <th style="padding: 10px;">CMF</th>
                     </tr>
                 </thead>
                 <tbody>
                     {table_rows_html}
                 </tbody>
             </table>
-            <div style="margin-top: 20px; padding: 14px; background: #0f172a; border-radius: 8px; border-left: 4px solid #38bdf8;">
+            <div style="margin-top: 20px; padding: 14px; background: #0f172a; border-radius: 8px; border-left: 4px solid #4ade80;">
                 <p style="margin: 0; font-size: 13px; color: #cbd5e1;">
-                    <strong>💡 Broker Notu:</strong> Hedef 1 seviyesinde (%6-8 kâr) pozisyonun %50'sini satıp stopu başa başa çekiniz. Stop seviyesinin altında 15 dakikalık kapanışta pozisyonu kapatınız.
+                    <strong>💡 Broker Prensibi:</strong> Sadece BIST'in en likit tahtalarında pusuya yatılır. Sat tuşuna basıldığında kademe kaybetmeden 1 saniyede nakde geçilir. Hedef 1'de %50 realize edilip stop başa başa çekilir.
                 </p>
             </div>
         </div>
     </body>
     </html>
     """
-    send_email_notification("☀️ BIST 360 - 09:30 Günlük Seans Bülteni", html_email, msg)
+    send_email_notification("☀️ BIST 360 - Günlük Broker & Makro Seans Raporu", html_email, msg)
 
 def send_telegram_alert(message: str) -> bool:
     """Telegram yapılandırılmışsa mesaj iletir."""

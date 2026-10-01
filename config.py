@@ -31,6 +31,9 @@ ELITE_LIQUID_TICKERS = [
 # Seçici İşlem Modu: Sadece A+ kurulum varsa işlem öner, yoksa nakitte bekle
 STRICT_A_PLUS_FILTER = True
 
+# Varsayılan Test ve İşlem Sembolü
+DEFAULT_TICKER = "THYAO.IS"
+
 # Backtest ve Simülasyon Ayarları
 DEFAULT_INITIAL_CAPITAL = 100_000.0  # 100.000 TL başlangıç sermayesi
 DEFAULT_COMMISSION_RATE = 0.001      # Binde 1 komisyon (0.1%)

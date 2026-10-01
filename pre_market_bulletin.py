@@ -24,6 +24,7 @@ from data_loader import fetch_data
 from strategies.bist_sniper import BISTSniperStrategy
 from strategies.momentum_breakout import MomentumBreakoutStrategy
 from bist_360 import BIST360Analyzer
+from macro_and_earnings_tracker import get_macro_snapshot
 
 init(autoreset=True)
 
@@ -31,6 +32,20 @@ def generate_morning_bulletin():
     sniper = BISTSniperStrategy()
     momentum = MomentumBreakoutStrategy()
     analyzer = BIST360Analyzer()
+
+    # 1. Makroekonomik Gündem ve İklim
+    macro = get_macro_snapshot()
+    m_xu = macro["metrics"].get("XU100", {})
+    m_usd = macro["metrics"].get("USDTRY", {})
+    m_brent = macro["metrics"].get("BRENT", {})
+
+    print(f"\n{Fore.CYAN}==========================================================================================")
+    print(f"{Fore.WHITE}{Style.BRIGHT}  🌍  KIDEMLİ BROKER SEANS ÖNCESİ MAKRO & GÜNDEM DEĞERLENDİRMESİ")
+    print(f"{Fore.CYAN}=========================================================================================={Style.RESET_ALL}")
+    print(f"• BIST 100 Regimi: {macro['regime']} (Son: {m_xu.get('last', 0):,.0f} | Günlük: {m_xu.get('change_pct', 0):+0.2f}%)")
+    print(f"• Broker Görüşü  : {macro['broker_verdict']}")
+    print(f"• Sektörel Dinamik: {macro['sector_note']}")
+    print(f"• Dolar/TL: {m_usd.get('last', 0):.2f} | Brent Petrol: ${m_brent.get('last', 0):.2f}\n")
 
     # Portföy Dağılımı: 100.000 TL sermaye, Maksimum %10 Kuralı = Hisse başına 10.000 TL
     slot_capital = DEFAULT_INITIAL_CAPITAL * MAX_POSITION_SIZE_PCT
@@ -40,7 +55,7 @@ def generate_morning_bulletin():
     # Hedef Hisse Havuzu: Sadece en derin, anında tek tuşla çıkılabilen Elit A+ Lokomotifler
     target_pool = ELITE_LIQUID_TICKERS if STRICT_A_PLUS_FILTER else BIST_30_TICKERS
 
-    print(f"\n{Fore.YELLOW}==========================================================================================")
+    print(f"{Fore.YELLOW}==========================================================================================")
     print(f"{Fore.WHITE}{Style.BRIGHT}  🛡️  BIST 360 SEÇİCİ A+ LİSTESİ (EN GÜVENLİ & ANINDA ÇIKILABİLİR LOKOMOTİFLER)")
     print(f"{Fore.YELLOW}=========================================================================================={Style.RESET_ALL}")
     print(f"Toplam Sermaye: {DEFAULT_INITIAL_CAPITAL:,.0f} TL | Pozisyon Tavanı: {slot_capital:,.0f} TL (%10) | Prensip: Zorlama Yok, Sadece A+\n")
@@ -149,7 +164,7 @@ def generate_morning_bulletin():
     # Ekrana ve E-Postaya Bildirim Gönder
     try:
         from notifier import broadcast_pre_market_bulletin
-        broadcast_pre_market_bulletin(display_rows)
+        broadcast_pre_market_bulletin(display_rows, macro=macro)
     except Exception as e:
         print(f"[UYARI] Bildirim gönderilemedi: {e}")
 
