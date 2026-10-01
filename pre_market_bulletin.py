@@ -143,8 +143,24 @@ def generate_morning_bulletin():
     # İlla her şeye girmeyeceğiz: Sadece EN TEMİZ ilk 2 veya 3 Elit hisse
     top_candidates = candidates[:3]
 
+    print(f"\n{Fore.MAGENTA}==========================================================================================")
+    print(f"{Fore.WHITE}{Style.BRIGHT}  🕵️‍♂️  ALIM ÖNCESİ SİTE, HABER, KAP VE TÜYO İSTİHBARATI")
+    print(f"{Fore.MAGENTA}=========================================================================================={Style.RESET_ALL}")
+
     display_rows = []
+    from sentiment_and_news_tracker import verify_stock_before_buy
+
     for c in top_candidates:
+        t_info = verify_stock_before_buy(c["Hisse"])
+        tip_summary = "🟢 Temiz Akış"
+        if t_info["hot_tips"]:
+            primary_tip = t_info["hot_tips"][0]
+            tip_summary = f"{primary_tip['type'][:2]} {primary_tip['keyword']}"
+            print(f"• {c['Hisse']:6} : [{primary_tip['type']}] {primary_tip['headline'][:85]}...")
+            print(f"           💡 Broker Uyarısı: {t_info['warning_note']}")
+        else:
+            print(f"• {c['Hisse']:6} : 🟢 Olağan haber akışı, spekülatif tuzak veya devre kesici riski yok.")
+
         display_rows.append({
             "Hisse": c["Hisse"],
             "Öncelik": c["Durum"],
@@ -154,10 +170,11 @@ def generate_morning_bulletin():
             "Zarar Kes (Stop)": c["Stop-Loss"],
             "Hedef 1 (+%6-8)": c["Hedef 1"],
             "Hedef 2 (+%15)": c["Hedef 2"],
-            "Çıkış": "⚡ Anında (A+)",
-            "360 Skor": c["BIST 360"]
+            "Tüyo / Haber": tip_summary,
+            "Çıkış": "⚡ Anında (A+)"
         })
 
+    print()
     df_report = pd.DataFrame(display_rows)
     print(tabulate(df_report, headers="keys", tablefmt="fancy_grid", showindex=False))
 

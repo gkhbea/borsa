@@ -214,6 +214,40 @@ def broadcast_pre_market_bulletin(report_df_rows, macro=None, balance_sheets=Non
     """
     send_email_notification("☀️ BIST 360 - Günlük Broker & Makro Seans Raporu", html_email, msg)
 
+def broadcast_news_tip(ticker: str, tip_type: str, keyword: str, headline: str, source: str):
+    """Sıcak bir tüyo veya kritik KAP haberi yakalandığında anında ekrana ve e-postaya fırlatır."""
+    title = f"📢 BIST TÜYO ALARMI: {ticker} ({keyword})"
+    msg = f"{headline[:75]}... [{source}]"
+    
+    # 1. Ekrana Windows Toast Bildirimi
+    send_desktop_notification(title, msg)
+    
+    # 2. HTML E-Posta Şablonu
+    html_content = f"""
+    <html>
+    <body style="font-family: Arial, sans-serif; background-color: #0f172a; color: #f8fafc; padding: 20px;">
+        <div style="max-width: 600px; margin: auto; background: #1e293b; border-radius: 12px; padding: 24px; border: 1px solid #334155;">
+            <h2 style="color: #38bdf8; margin-top: 0;">📢 BIST Sıcak Haber & Tüyo Bildirimi</h2>
+            <div style="background: #0f172a; border-radius: 8px; padding: 16px; margin-bottom: 20px; border-left: 4px solid #f59e0b;">
+                <p style="font-size: 18px; font-weight: bold; margin: 0; color: #f59e0b;">
+                    {ticker} - {tip_type} ({keyword})
+                </p>
+                <p style="font-size: 15px; margin: 10px 0; color: #cbd5e1;">
+                    {headline}
+                </p>
+                <p style="font-size: 12px; margin: 4px 0; color: #94a3b8;">
+                    <strong>Kaynak:</strong> {source}
+                </p>
+            </div>
+            <p style="font-size: 12px; color: #64748b; margin-bottom: 0;">
+                Bu bildirim BIST 360 Haber ve Tüyo Radarı tarafından canlı taranarak iletilmiştir.
+            </p>
+        </div>
+    </body>
+    </html>
+    """
+    send_email_notification(f"📢 [{keyword}] {ticker} - BIST Sıcak Haber & Tüyo", html_email, msg)
+
 def send_telegram_alert(message: str) -> bool:
     """Telegram yapılandırılmışsa mesaj iletir."""
     from config import TELEGRAM_CONFIG

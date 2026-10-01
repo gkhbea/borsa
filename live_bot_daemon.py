@@ -85,12 +85,28 @@ def run_market_scanner_loop(interval_sec: int = 90):
                         seen_signals.add(sig_key)
                         close_p = last_row["Close"]
                         r360 = analyzer.analyze_single_stock(ticker)
-                        log_event(f"🔥 [AL SİNYALİ] {clean_t} @ {close_p:.2f} TL | BIST 360 Skor: {r360['total_score']:.1f}")
+
+                        # Alım Öncesi Haber & Tüyo Güvenlik Denetimi
+                        try:
+                            from sentiment_and_news_tracker import verify_stock_before_buy
+                            v_check = verify_stock_before_buy(clean_t)
+                            if not v_check["can_buy"]:
+                                log_event(f"⛔ [FREN] {clean_t} teknik olarak AL verdi fakat haber radarı frenledi: {v_check['warning_note']}")
+                                continue
+                            
+                            tip_note = ""
+                            if v_check["hot_tips"]:
+                                top_tip = v_check["hot_tips"][0]
+                                tip_note = f" (🔥 Tüyo/Haber: {top_tip['keyword']})"
+                        except Exception:
+                            tip_note = ""
+
+                        log_event(f"🔥 [AL SİNYALİ] {clean_t} @ {close_p:.2f} TL | BIST 360 Skor: {r360['total_score']:.1f}{tip_note}")
                         notify_signal(
                             ticker=clean_t,
                             signal_type="AL",
                             price=close_p,
-                            reason=f"Sniper Dönüşü (BIST 360: {r360['total_score']:.0f}/100)"
+                            reason=f"Sniper Dönüşü (BIST 360: {r360['total_score']:.0f}/100){tip_note}"
                         )
 
             time.sleep(interval_sec)
