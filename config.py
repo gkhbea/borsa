@@ -39,7 +39,21 @@ DEFAULT_INTERVAL = "1d"
 DEFAULT_PERIOD = "2y"  # 2 yıllık geçmiş veri
 
 # Canlı Alarm ve Bildirim Ayarları
-# İsteğe bağlı: Telegram Botu kurarak sinyalleri anlık cebe iletebilirsiniz.
+DESKTOP_NOTIFY_CONFIG = {
+    "enabled": True,             # Windows ekran bildirimi (Toast)
+    "sound": True
+}
+
+EMAIL_CONFIG = {
+    "enabled": True,
+    "smtp_server": "smtp.gmail.com",
+    "smtp_port": 587,
+    "sender_email": "gokhanelalyz@gmail.com",
+    "sender_password": "",       # Gmail 16 haneli 'Uygulama Şifresi' (App Password)
+    "recipient_email": "gokhanelalyz@gmail.com"
+}
+
+# İsteğe bağlı: Telegram Botu
 TELEGRAM_CONFIG = {
     "enabled": False,
     "bot_token": "",      # @BotFather ile alınan Token

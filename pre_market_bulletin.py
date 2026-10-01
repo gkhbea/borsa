@@ -63,86 +63,89 @@ def generate_morning_bulletin():
         score_360 = r360["total_score"]
         cmf = r360["takas"]["cmf"]
 
-        stop_loss = round(close_p - (atr * 1.5), 2)
-        target_1 = round(close_p + (atr * 2.5), 2)
-        target_2 = round(close_p + (atr * 4.5), 2)
+        # Seans Öncesi Pusu Seviyesi: Destek (EMA 21/50 veya ATR 0.5x altı)
+        entry_limit = round(close_p * 0.992, 2)  # Açılış sarkmasında pusu (yüzde 0.8 iskonto)
+        stop_loss = round(entry_limit - (atr * 1.5), 2)
+        target_1 = round(entry_limit + (atr * 2.5), 2)
+        target_2 = round(entry_limit + (atr * 4.5), 2)
 
-        # Kaç lot alınabilir?
-        lot_count = int(slot_capital // close_p)
-        total_cost = lot_count * close_p
+        lot_count = int(slot_capital // entry_limit)
+        total_cost = lot_count * entry_limit
 
-        # Karar Mekanizması
+        # Puanlama & Öncelik
         priority = 0
         tag = ""
         action_note = ""
 
-        if sig_s == 1:
+        if sig_s == 1 or sig_m == 1:
             priority = 100
-            tag = "🔥 1. ÖNCELİK (SNIPER)"
-            action_note = "Destekten Dönüş Başladı - Açılışta Pusu"
-        elif sig_m == 1:
-            priority = 95
-            tag = "🚀 1. ÖNCELİK (MOMENTUM)"
-            action_note = "Zirve Kırılımı + Güçlü Para Girişi"
-        elif score_360 >= 70.0 and cmf > 0.05:
+            tag = "🔥 1. DERECE (TETİKTE)"
+            action_note = "Doğrudan Alım Sinyali Aktif"
+        elif score_360 >= 60.0 or (score_360 >= 53.0 and cmf >= 0.08):
             priority = 85
-            tag = "💎 2. ÖNCELİK (KURUMSAL ALIM)"
-            action_note = "Tahta Toplanıyor, Çarpanlar Çok Cazip"
-        elif score_360 >= 65.0 and cmf > 0.0:
-            priority = 75
-            tag = "⚡ 2. ÖNCELİK (GÜÇLÜ 360)"
-            action_note = "Teknik/Temel/Takas Uyumu Pozitif"
-        elif rec_s or rec_m:
+            tag = "💎 1. DERECE (KURUMSAL PUSU)"
+            action_note = "Tahtada Ciddi Toplama Var, Sarkmada Al"
+        elif score_360 >= 50.0 and cmf > 0.0:
             priority = 70
-            tag = "👀 3. ÖNCELİK (PUSU LİSTESİ)"
-            action_note = "Sinyal Çok Taze, Onay Bekleniyor"
-        elif score_360 >= 60.0 and cmf > 0.0:
-            priority = 60
-            tag = "📊 3. ÖNCELİK (DİP DESTEK)"
-            action_note = "Trend Pozitif, Stop Yakın Takip"
+            tag = "⚡ 2. DERECE (POZİTİF RADAR)"
+            action_note = "Para Girişi Pozitif, Destek Takip"
+        elif score_360 >= 50.0:
+            priority = 50
+            tag = "📊 3. DERECE (İZLEME)"
+            action_note = "Piyasa Dönüşüyle Tetiklenebilir"
 
-        if priority >= 60:
+        if priority >= 70:
             candidates.append({
                 "Hisse": clean_t,
                 "Durum": tag,
-                "Son Fiyat": f"{close_p:.2f} TL",
-                "Önerilen Lot": f"{lot_count} Adet",
-                "Toplam Tutar": f"{total_cost:,.0f} TL",
-                "Stop-Loss (Zarar Kes)": f"{stop_loss:.2f} TL",
-                "Hedef 1 (Kısa)": f"{target_1:.2f} TL",
-                "Hedef 2 (Ana Trend)": f"{target_2:.2f} TL",
+                "Son Kapanış": f"{close_p:.2f} TL",
+                "Önerilen Pusu": f"{entry_limit:.2f} TL",
+                "Lot Sayısı": f"{lot_count} Adet",
+                "Maliyet": f"{total_cost:,.0f} TL",
+                "Stop-Loss": f"{stop_loss:.2f} TL",
+                "Hedef 1": f"{target_1:.2f} TL",
+                "Hedef 2": f"{target_2:.2f} TL",
                 "BIST 360": f"{score_360:.1f}",
-                "Para Girişi": f"{cmf:+.2f}",
+                "CMF (Para)": f"{cmf:+.2f}",
                 "priority": priority,
                 "score": score_360,
-                "Strateji Notu": action_note
+                "Strateji": action_note
             })
 
     if not candidates:
-        print("Bugün için yüksek güvenlikli işlem kriterlerini karşılayan hisse bulunamadı.")
+        print("Piyasada aşırı risk tespit edildi, nakitte kalınması önerilir.")
         return
 
-    # Sıralama: Önce Öncelik Derecesi, sonra 360 Skoru
+    # Sıralama: Önce Öncelik, sonra BIST 360 Skoru
     candidates.sort(key=lambda x: (x["priority"], float(x["score"])), reverse=True)
 
-    # Tablo görünümü
+    # İlk 5 hisseyi net tabloya dök
+    top_candidates = candidates[:6]
+
     display_rows = []
-    for c in candidates:
+    for c in top_candidates:
         display_rows.append({
             "Hisse": c["Hisse"],
             "Öncelik": c["Durum"],
-            "Fiyat": c["Son Fiyat"],
-            "Lot Sayısı": c["Önerilen Lot"],
-            "Maliyet": c["Toplam Tutar"],
-            "Zarar Kes (Stop)": c["Stop-Loss (Zarar Kes)"],
-            "Hedef 1": c["Hedef 1 (Kısa)"],
-            "Hedef 2": c["Hedef 2 (Ana Trend)"],
-            "Skor": c["BIST 360"],
-            "CMF": c["Para Girişi"]
+            "Pusu Fiyatı": c["Önerilen Pusu"],
+            "Lot": c["Lot Sayısı"],
+            "Tutar": c["Maliyet"],
+            "Zarar Kes (Stop)": c["Stop-Loss"],
+            "Hedef 1 (+%6-8)": c["Hedef 1"],
+            "Hedef 2 (+%15)": c["Hedef 2"],
+            "360 Skor": c["BIST 360"],
+            "Para Akışı": c["CMF (Para)"]
         })
 
     df_report = pd.DataFrame(display_rows)
     print(tabulate(df_report, headers="keys", tablefmt="fancy_grid", showindex=False))
+
+    # Ekrana ve E-Postaya Bildirim Gönder
+    try:
+        from notifier import broadcast_pre_market_bulletin
+        broadcast_pre_market_bulletin(display_rows)
+    except Exception as e:
+        print(f"[UYARI] Bildirim gönderilemedi: {e}")
 
     print(f"\n{Fore.GREEN}{Style.BRIGHT}💡 BROKER YÖNETİCİ NOTU (PORTFÖY DİSİPLİNİ):")
     print(f"1. Yukarıdaki listeden en yüksek öncelikli **en fazla 3 hisse** seçilmelidir (Risk bölüştürme).")
