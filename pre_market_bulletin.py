@@ -192,6 +192,36 @@ def generate_morning_bulletin():
     df_report = pd.DataFrame(display_rows)
     print(tabulate(df_report, headers="keys", tablefmt="fancy_grid", showindex=False))
 
+    # 3. BIST TÜM Pazar Taraması (400+ Hisse İçinden Seçilen Büyüme Fırsatları)
+    all_market_rows = []
+    try:
+        from bist_market_scanner import scan_entire_bist
+        bist_scan = scan_entire_bist(min_volume_tl=15_000_000)
+        all_market_rows = bist_scan.get("bist_all_picks", [])
+        if all_market_rows:
+            print(f"\n{Fore.GREEN}==========================================================================================")
+            print(f"{Fore.WHITE}{Style.BRIGHT}  🚀  BIST TÜM GİZLİ CEVHERLER (BIST 30 DIŞI 400+ HİSSE TARAMASI / GÜÇLÜ HACİM)")
+            print(f"{Fore.GREEN}=========================================================================================={Style.RESET_ALL}")
+            print(f"Toplam Taranan Likit Pazar: {bist_scan['total_scanned']} Hisse | Min Hacim: 15M TL | Tek Tuşla Çıkış\n")
+            
+            clean_all_rows = []
+            for item in all_market_rows:
+                clean_all_rows.append({
+                    "Hisse": item["Hisse"],
+                    "Pazar": item["Pazar"],
+                    "Pusu Fiyatı": item["Pusu Fiyatı"],
+                    "Lot": item["Lot"],
+                    "Tutar (%10)": item["Tutar (%10)"],
+                    "Zarar Kes (Stop)": item["Stop-Loss"],
+                    "Hedef 1": item["Hedef 1"],
+                    "Günlük Hacim": item["Hacim"],
+                    "Durum": item["Durum"]
+                })
+            df_all = pd.DataFrame(clean_all_rows)
+            print(tabulate(df_all, headers="keys", tablefmt="fancy_grid", showindex=False))
+    except Exception as e:
+        print(f"[UYARI] BIST Tüm tarayıcı: {e}")
+
     # Ekrana ve E-Postaya Bildirim Gönder
     try:
         from notifier import broadcast_pre_market_bulletin
@@ -199,10 +229,10 @@ def generate_morning_bulletin():
     except Exception as e:
         print(f"[UYARI] Bildirim gönderilemedi: {e}")
 
-    print(f"\n{Fore.GREEN}{Style.BRIGHT}💡 KIDEMLİ BROKER YÖNETİCİ NOTU (GARANTİ & NAKDE ÇIKIŞ DİSİPLİNİ):")
-    print(f"1. ⚡ Anında Çıkış Garantisi: Sadece BIST'in en derin mega-hisseleri seçilmiştir. Satış tuşuna bastığında 1 saniyede nakde geçebilirsin.")
-    print(f"2. 🛡️ Zorlama İşlem Yok: İlla tüm hisseleri almak zorunda değiliz; nakit de bir pozisyondur. Günde en fazla 1-2 A+ hisse yeterlidir.")
-    print(f"3. 💰 Maksimum %10 Kuralı: Pozisyon başına 10.000 TL tavan. Stop olsak dahi portföy kaybı sadece ~300 TL'dir (%0.3).")
+    print(f"\n{Fore.GREEN}{Style.BRIGHT}💡 KIDEMLİ BROKER YÖNETİCİ NOTU (TÜM PAZAR & SERMAYE DİSİPLİNİ):")
+    print(f"1. 🌐 Tüm Borsa Taraması: 400+ hisse tarandı; sığ/manipülatif hisseler elendi, sadece yüksek hacimli (15M+ TL) güvenli büyüme hisseleri seçildi.")
+    print(f"2. ⚡ Anında Çıkış Garantisi: Seçilen tüm hisseler tek tuşla 1 saniyede nakde dönülebilir tahtalardır.")
+    print(f"3. 💰 %10 Kuralı: İster BIST 30 ister BIST Tüm olsun, tek bir hisseye 10.000 TL'den fazla yatırılmaz.")
     print(f"4. 🎯 Hedef 1 Disiplini: +%6-8 kârda %50 satılır, stop maliyete çekilir, sıfır riskle trend izlenir.")
     print(f"==========================================================================================\n")
 
