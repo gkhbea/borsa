@@ -44,12 +44,17 @@ DESKTOP_NOTIFY_CONFIG = {
     "sound": True
 }
 
+try:
+    from local_settings import EMAIL_PASSWORD
+except ImportError:
+    EMAIL_PASSWORD = ""
+
 EMAIL_CONFIG = {
     "enabled": True,
     "smtp_server": "smtp.gmail.com",
     "smtp_port": 587,
     "sender_email": "gokhanelalyz@gmail.com",
-    "sender_password": "",       # Gmail 16 haneli 'Uygulama Şifresi' (App Password)
+    "sender_password": EMAIL_PASSWORD,       # Gmail 16 haneli 'Uygulama Şifresi' (App Password)
     "recipient_email": "gokhanelalyz@gmail.com"
 }
 

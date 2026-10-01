@@ -1,7 +1,12 @@
-"""
-BIST 360 - Bildirim Motoru (Masaüstü Ekran Bildirimi & E-Posta Gönderimi)
-Windows Toast bildirimleri ve Gmail SMTP e-posta bildirimlerini yönetir.
-"""
+import sys
+
+if sys.platform == "win32":
+    try:
+        sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+        sys.stderr.reconfigure(encoding="utf-8", errors="replace")
+    except Exception:
+        pass
+
 import smtplib
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
