@@ -16,7 +16,7 @@ import pandas as pd
 from tabulate import tabulate
 from colorama import Fore, Style, init
 
-from config import BIST_30_TICKERS, DEFAULT_INITIAL_CAPITAL
+from config import BIST_30_TICKERS, DEFAULT_INITIAL_CAPITAL, MAX_POSITION_SIZE_PCT
 from data_loader import fetch_data
 from strategies.bist_sniper import BISTSniperStrategy
 from strategies.momentum_breakout import MomentumBreakoutStrategy
@@ -29,15 +29,15 @@ def generate_morning_bulletin():
     momentum = MomentumBreakoutStrategy()
     analyzer = BIST360Analyzer()
 
-    # Portföy Dağılımı: 100.000 TL sermaye, 3 ana yuva = Yuva başına ~33.000 TL
-    slot_capital = DEFAULT_INITIAL_CAPITAL / 3
+    # Portföy Dağılımı: 100.000 TL sermaye, Maksimum %10 Kuralı = Hisse başına 10.000 TL
+    slot_capital = DEFAULT_INITIAL_CAPITAL * MAX_POSITION_SIZE_PCT
 
     candidates = []
 
     print(f"\n{Fore.YELLOW}==========================================================================================")
     print(f"{Fore.WHITE}{Style.BRIGHT}  ☀️  BIST 360 SEANS ÖNCESİ ALGORİTMİK HİSSE LİSTESİ (SAAT 09:30 RAPORU)")
     print(f"{Fore.YELLOW}=========================================================================================={Style.RESET_ALL}")
-    print(f"Toplam Sermaye: {DEFAULT_INITIAL_CAPITAL:,.0f} TL | Pozisyon Başına Ayrılan: {slot_capital:,.0f} TL | Disiplin: Maks 3 Hisse\n")
+    print(f"Toplam Sermaye: {DEFAULT_INITIAL_CAPITAL:,.0f} TL | Pozisyon Başına Ayrılan (%10 Kuralı): {slot_capital:,.0f} TL | Maksimum Risk Koruması\n")
 
     for ticker in BIST_30_TICKERS:
         clean_t = ticker.replace(".IS", "")
@@ -148,8 +148,8 @@ def generate_morning_bulletin():
         print(f"[UYARI] Bildirim gönderilemedi: {e}")
 
     print(f"\n{Fore.GREEN}{Style.BRIGHT}💡 BROKER YÖNETİCİ NOTU (PORTFÖY DİSİPLİNİ):")
-    print(f"1. Yukarıdaki listeden en yüksek öncelikli **en fazla 3 hisse** seçilmelidir (Risk bölüştürme).")
-    print(f"2. Stop-Loss seviyelerinin altına seans içi sarkmalarda kesinlikle inatlaşılmamalıdır.")
+    print(f"1. Sermaye Koruması: Her hisseye maksimum %10 (10.000 TL) tahsis edilir; tek bir işlemde portföy riske atılmaz.")
+    print(f"2. Stop-Loss seviyelerinin altına seans içi sarkmalarda kesinlikle inatlaşılmamalıdır (Maksimum kayıp işlem başına sadece ~300 TL!).")
     print(f"3. Hedef 1'e ulaşıldığında pozisyonun %50'si realize edilip, stop seviyesi giriş fiyatına (başa baş) çekilmelidir.")
     print(f"==========================================================================================\n")
 

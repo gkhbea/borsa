@@ -150,7 +150,7 @@ def broadcast_pre_market_bulletin(report_df_rows):
         <div style="max-width: 850px; margin: auto; background: #1e293b; border-radius: 12px; padding: 24px; border: 1px solid #334155;">
             <h2 style="color: #38bdf8; margin-top: 0;">☀️ BIST 360 - 09:30 Seans Öncesi Bülteni</h2>
             <p style="color: #94a3b8; font-size: 14px;">
-                Portföy: 100.000 TL | Yuva Başına: 33.333 TL | Maksimum 3 Hisse Disiplini
+                Portföy: 100.000 TL | Maksimum %10 Kuralı: Hisse Başına 10.000 TL | Maksimum Risk Koruması
             </p>
             <table style="width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 13px;">
                 <thead>

@@ -29,6 +29,7 @@ DEFAULT_COMMISSION_RATE = 0.001      # Binde 1 komisyon (0.1%)
 DEFAULT_SLIPPAGE = 0.0005            # Kayma payı (0.05%)
 
 # Risk Yönetimi Parametreleri
+MAX_POSITION_SIZE_PCT = 0.10        # Her hisseye maksimum %10 sermaye tahsisi (100k'da 10.000 TL)
 DEFAULT_STOP_LOSS_PCT = 0.03        # %3 Stop-Loss
 DEFAULT_TAKE_PROFIT_PCT = 0.06      # %6 Kâr Al (Risk-Ödül: 1:2)
 DEFAULT_TRAILING_STOP_PCT = 0.025   # %2.5 İz süren stop
