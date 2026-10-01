@@ -15,12 +15,13 @@ if sys.platform == "win32":
 
 import time
 import json
+import datetime
 import threading
 from pathlib import Path
 from http.server import HTTPServer
 from colorama import Fore, Style, init
 
-from config import DATA_DIR, BIST_30_TICKERS
+from config import DATA_DIR, BIST_30_TICKERS, DAILY_REPORT_TIME, MORNING_BULLETIN_TIME
 from data_loader import fetch_data
 from strategies.bist_sniper import BISTSniperStrategy
 from bist_360 import BIST360Analyzer
@@ -46,6 +47,45 @@ def log_event(message: str):
             f.write(line + "\n")
     except Exception:
         pass
+
+def run_schedule_monitor_thread():
+    """Her gün 09:30'da Sabah Bülteni ve 19:00'da Günlük Kapanış Ekstresini otomatik tetikler."""
+    log_event("⏰ Otomatik Raporlama Servisi devrede: 09:30 Sabah Bülteni | 19:00 Günlük Kapanış Ekstresi")
+    last_morning_date = ""
+    last_closing_date = ""
+
+    while True:
+        try:
+            now = datetime.datetime.now()
+            today_str = now.strftime("%Y-%m-%d")
+            current_time_str = now.strftime("%H:%M")
+
+            # 1. Saat 09:30 Sabah Bülteni (09:30 - 09:35 arası)
+            if "09:30" <= current_time_str < "09:35" and last_morning_date != today_str:
+                log_event("🌅 Saat 09:30 - Sabah Seans Öncesi Bülteni gönderiliyor...")
+                try:
+                    from pre_market_bulletin import generate_pre_market_bulletin
+                    generate_pre_market_bulletin(send_mail=True)
+                    last_morning_date = today_str
+                    log_event("✅ 09:30 Sabah Bülteni başarıyla iletildi.")
+                except Exception as ex:
+                    log_event(f"[HATA] Sabah bülteni gönderilemedi: {ex}")
+
+            # 2. Saat 19:00 Günlük Kapanış Ekstresi (19:00 - 19:05 arası)
+            if "19:00" <= current_time_str < "19:05" and last_closing_date != today_str:
+                log_event("🔔 Saat 19:00 - Günlük Kapanış Ekstresi & Kâr/Zarar Raporu gönderiliyor...")
+                try:
+                    from daily_closing_report import run_daily_closing_report
+                    run_daily_closing_report(send_mail=True)
+                    last_closing_date = today_str
+                    log_event("✅ 19:00 Günlük Kapanış Ekstresi başarıyla iletildi.")
+                except Exception as ex:
+                    log_event(f"[HATA] Günlük kapanış ekstresi gönderilemedi: {ex}")
+
+        except Exception as e:
+            log_event(f"[HATA] Zamanlayıcı döngüsünde hata: {e}")
+
+        time.sleep(30)
 
 def run_webhook_thread(port: int = 8080):
     """TradingView webhook sunucusunu arka planda çalıştırır."""
@@ -109,6 +149,29 @@ def run_market_scanner_loop(interval_sec: int = 90):
                             reason=f"Sniper Dönüşü (BIST 360: {r360['total_score']:.0f}/100){tip_note}"
                         )
 
+                        # Otonom Test Portföyüne Pozisyon Ekle
+                        try:
+                            from paper_trader import open_paper_position
+                            atr_val = last_row.get("ATR", close_p * 0.035)
+                            p_stop = round(close_p - (atr_val * 1.5), 2)
+                            p_tgt1 = round(close_p + (atr_val * 2.5), 2)
+                            p_tgt2 = round(close_p + (atr_val * 4.5), 2)
+                            open_paper_position(ticker, close_p, p_stop, p_tgt1, p_tgt2, f"Sniper Dönüşü{tip_note}")
+                        except Exception:
+                            pass
+
+            # 1 Haftalık Otonom Portföy Canlı İzleme & Kâr Al / Stop Kontrolü
+            try:
+                from paper_trader import update_paper_positions
+                portfolio_events = update_paper_positions()
+                for pev in portfolio_events:
+                    log_event(f"⚡ [PORTFÖY İŞLEMİ] {pev['ticker']} - {pev['event']} | Fiyat: {pev['price']:.2f} TL | Kâr/Zarar: {pev['pnl_tl']:+,.0f} TL (%{pev['pnl_pct']:+.1f})")
+                    from notifier import send_desktop_notification, send_email_notification
+                    send_desktop_notification(f"🎯 Portföy İşlemi: {pev['ticker']}", f"{pev['event']} tetiklendi: {pev['pnl_tl']:+,.0f} TL (%{pev['pnl_pct']:+.1f})")
+                    send_email_notification(f"🎯 [{pev['event']}] {pev['ticker']} - 1 Haftalık Test Portföyü", f"<p>{pev['ticker']} için {pev['event']} tetiklendi. Kâr/Zarar: {pev['pnl_tl']:+,.0f} TL</p>", f"{pev['ticker']} {pev['event']}")
+            except Exception:
+                pass
+
             time.sleep(interval_sec)
         except Exception as e:
             log_event(f"[UYARI] Tarama döngüsünde hata: {e}")
@@ -123,7 +186,11 @@ def main():
     wh_thread = threading.Thread(target=run_webhook_thread, args=(8080,), daemon=True)
     wh_thread.start()
 
-    # 2. Ana Döngü: Piyasa Tarayıcısı
+    # 2. Thread: Otomatik Raporlama Zamanlayıcısı (09:30 Sabah & 19:00 Kapanış)
+    sched_thread = threading.Thread(target=run_schedule_monitor_thread, daemon=True)
+    sched_thread.start()
+
+    # 3. Ana Döngü: Piyasa Tarayıcısı
     run_market_scanner_loop(interval_sec=90)
 
 if __name__ == "__main__":

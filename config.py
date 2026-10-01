@@ -34,16 +34,23 @@ STRICT_A_PLUS_FILTER = True
 # Varsayılan Test ve İşlem Sembolü
 DEFAULT_TICKER = "THYAO.IS"
 
-# Backtest ve Simülasyon Ayarları
-DEFAULT_INITIAL_CAPITAL = 100_000.0  # 100.000 TL başlangıç sermayesi
+# 1 Haftalık Canlı Test ve Portföy Ayarları (5.000 TL Mikro-Portföy)
+DEFAULT_INITIAL_CAPITAL = 5_000.0    # 5.000 TL başlangıç sermayesi (Kullanıcı Talebi)
+POSITION_ALLOCATION_TL = 2_000.0     # Pozisyon başına maksimum tahsis (~2.000 TL)
+MAX_OPEN_POSITIONS = 2               # Maksimum 2 açık hisse (Konsantre & Hızlı Çıkış)
+MIN_CASH_RESERVE_TL = 1_000.0        # 1.000 TL nakit tamponu (Dipten maliyet/fırsat payı)
 DEFAULT_COMMISSION_RATE = 0.001      # Binde 1 komisyon (0.1%)
 DEFAULT_SLIPPAGE = 0.0005            # Kayma payı (0.05%)
 
 # Risk Yönetimi Parametreleri
-MAX_POSITION_SIZE_PCT = 0.10        # Her hisseye maksimum %10 sermaye tahsisi (100k'da 10.000 TL)
+MAX_POSITION_SIZE_PCT = 0.40        # 5.000 TL'de %40 = 2.000 TL
 DEFAULT_STOP_LOSS_PCT = 0.03        # %3 Stop-Loss
 DEFAULT_TAKE_PROFIT_PCT = 0.06      # %6 Kâr Al (Risk-Ödül: 1:2)
 DEFAULT_TRAILING_STOP_PCT = 0.025   # %2.5 İz süren stop
+
+# Otomatik Raporlama Saatleri
+DAILY_REPORT_TIME = "19:00"          # Günlük kapanış ve kâr/zarar ekstresi (Mail + Ekran)
+MORNING_BULLETIN_TIME = "09:30"      # Seans öncesi bülten ve pusu listesi (Mail + Ekran)
 
 # Veri Periyotları
 # Desteklenen aralıklar (yfinance): '1d', '1h', '30m', '15m', '5m'
