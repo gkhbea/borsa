@@ -1,124 +1,100 @@
-# 📈 BIST Algoritmik Al-Sat ve Ticaret Botu (Borsa İstanbul)
+# 📈 BIST 360 - Kurumsal Algoritmik Ticaret & Otonom Portföy Sistemi
 
-Borsa İstanbul (BIST 30 / BIST 100) hisseleri için özel olarak geliştirilmiş, teknik analiz indikatörleri, otomatik sinyal üretimi, risk yönetimi ve interaktif görselleştirme sunan profesyonel algoritmik ticaret ve backtest platformu.
-
----
-
-## 🌟 Temel Özellikler
-
-1. **Borsa İstanbul Entegrasyonu**:
-   - `THYAO`, `GARAN`, `ASELS`, `TUPRS`, `EREGL`, `BIMAS` gibi tüm BIST hisselerini otomatik olarak `.IS` formatında çeker.
-   - Hızlı testler için akıllı yerel önbellekleme (Caching).
-
-2. **Dahili Stratejiler**:
-   - **`supertrend`**: SuperTrend & EMA Ribbon Trend Takip Stratejisi (Trend piyasalarında en yüksek kârlılık).
-   - **`rsi_bb`**: RSI + Bollinger Bantları ile Ortalama Dönüş / Dip Yakalama (Dalgalı piyasalar için).
-   - **`macd_vol`**: MACD Kesişimi + Hacim Patlaması Onayı (Kurumsal giriş tespiti).
-   - **`ensemble`**: Trend, Momentum, Hacim ve Volatiliteyi harmanlayan 5 puanlık Çoklu İndikatör Topluluk Stratejisi.
-
-3. **Gelişmiş Risk Yönetimi & Backtest Motoru**:
-   - Dinamik Stop-Loss (%3) ve Kâr Al (%6) emirleri.
-   - **İz Süren Stop (Trailing Stop)**: Kârı korumak için fiyat yükseldikçe stop seviyesini otomatik yukarı çeker.
-   - Gerçekçi komisyon hesaplaması (Binde 1 komisyon oranı) ve kayma payı (slippage).
-   - Performans metrikleri: Toplam Getiri, Al & Tut (Benchmark) Getirisi, Kazanma Oranı (Win Rate %), Kâr Faktörü (Profit Factor), Maksimum Çekilme (Max Drawdown %), Sharpe Oranı.
-
-4. **İnteraktif HTML Raporlama (Plotly)**:
-   - Şamdan (Candlestick) grafikleri, hareketli ortalamalar, SuperTrend çizgisi.
-   - Alım ve Satım noktalarının grafik üzerinde net oklarla gösterilmesi.
-   - Portföy Değeri (TL) ile BIST hissesinin Al-Tut getirisinin zaman içindeki birebir kıyaslama eğrisi.
-
-5. **BIST 30 Canlı Piyasa Tarayıcı (Screener)**:
-   - Tek komutla tüm BIST 30 hisselerini tarar.
-   - Anlık fiyat, günlük değişim %, RSI değeri, SuperTrend yönü, hacim artışı ve güncel AL/SAT durumunu renkli terminal tablosunda sunar.
-
-6. **Telegram Alarm Entegrasyonu**:
-   - Üretilen AL ve SAT sinyallerini anında Telegram kanalınıza veya telefonunuza bildirim olarak atabilir.
+Borsa İstanbul (BIST) hisseleri için özel olarak geliştirilmiş; temel bilanço analizi, haber/KAP/tüyo dedektörü, asimetrik alfa algoritmaları, 437 hisselik canlı pazar tarayıcısı ve otonom portföy yönetim motorunu bir araya getiren profesyonel algoritmik ticaret platformu.
 
 ---
 
-## 🌐 TradingView Canlı Entegrasyonu (Pine Script v5 & Webhook)
+## 🌟 Öne Çıkan Kurumsal Yetenekler
 
-Sistem artık TradingView ile iki yönlü tam entegre çalışır:
+### 1. 🛡️ 1 Haftalık Otonom Test & Kağıt İşlem Motoru (`paper_trader.py`)
+* **5.000 TL Mikro-Portföy Kalibrasyonu**: Küçük sermayeleri korumak için tasarlanmış konsantre model.
+* **Maksimum 2 Açık Pozisyon**: Pozisyon başına ~2.000 TL tahsis, 1.000 TL acil durum nakit tamponu.
+* **Milisaniyelik Zarar Kes**: %3 Stop-Loss, %6 Hedef 1 (%50 Kâr Al & Stopu Başa Çek), Hedef 2 (Trend Sürüşü).
+* **Şeffaf Günlük**: Her işlem, kâr/zarar ve nakit hareketi `data/paper_portfolio.json` üzerinde kayıtlıdır.
 
-1. **Hazır Pine Script v5 Kodu:** [`tradingview_strategy_v5.pine`](file:///C:/Users/g%C3%B6khan/.gemini/antigravity-ide/scratch/bist_algo_bot/tradingview_strategy_v5.pine)
-   - 15m ve 1h grafiklerde yüksek serilik ve kâr potansiyeli için tasarlanmış, ADX rejim filtreli ve ATR Chandelier stoplu kurumsal strateji.
-   - Grafik üzerinde şık bilgi tablosu ve al-sat okları üretir.
+### 2. ⏰ Otomatik Raporlama Servisi (`live_bot_daemon.py`)
+* **09:30 Sabah Seans Öncesi Bülteni**: Dolar, Altın, Brent petrol, makro piyasa yönü, KAP tüyoları ve günün A+ pusu listesi (E-posta + Windows Bildirimi).
+* **10:00 - 18:00 Canlı Seans Radarı**: 90 saniyede bir tarama, TradingView 8080 Webhook dinleyicisi ve anlık alarm.
+* **19:00 Günlük Kapanış Ekstresi**: *"Bugün ne kazandık / ne kaybettik"* net TL ve % dökümü, aktif pozisyon karnesi ve broker seans değerlendirmesi (E-posta + Windows Bildirimi).
 
-2. **Canlı Webhook Dinleyicisi (`webhook_server.py`):**
-   - TradingView'de kurduğunuz alarmları mikro-saniyede yakalar.
-   - Gelen her sinyal anında BIST 360 motorumuzdan (Temel + Takas) onay süzgecinden geçer ve Telegram'a net emir olarak düşer.
+### 3. 🔍 437 Hisselik Yüksek Hızlı Pazar Tarayıcısı (`bist_market_scanner.py`)
+* TradingView kurumsal scanner motoru üzerinden tüm Borsa İstanbul'u **1.5 saniyede** tarar.
+* Minimum 15 Milyon TL günlük hacim filtresi ile sığ hisseleri eler.
+* Sonuçları iki kategoriye ayırır:
+  1. **BIST 30 Lokomotifler** (Tek tuşla anında çıkılabilen A+ likit hisseler).
+  2. **BIST Tüm Gizli Büyüme Hisseleri** (RSI dipte, EMA üzerinde hacim patlaması yapan yan tahtalar).
 
-### TradingView Nasıl Kurulur? (3 Adım)
-1. TradingView'de herhangi bir BIST hissesi (Örn: `THYAO`) açın. Alt paneldeki **Pine Editor** sekmesine tıklayın.
-2. Projedeki [`tradingview_strategy_v5.pine`](file:///C:/Users/g%C3%B6khan/.gemini/antigravity-ide/scratch/bist_algo_bot/tradingview_strategy_v5.pine) kodunun tamamını yapıştırıp **"Grafiğe Ekle"** butonuna basın.
-3. Grafikte stratejiye sağ tıklayıp **"Alarm Ekle"** deyin:
-   - **Webhook URL:** `http://IP_ADRESINIZ:8080/webhook` (veya ngrok url)
-   - Mesaj kısmına dokunmayın (kod otomatik olarak JSON formatında hazırlar).
-4. Terminalde dinleyiciyi başlatın:
-   ```powershell
-   python main.py webhook --port 8080
-   ```
+### 4. 📰 KAP, Haber & Tüyo Radarı (`sentiment_and_news_tracker.py`)
+* Google News TR ve KAP bültenlerini anlık tarar.
+* **Katalizörler**: İhale, Yeni İş İlişkisi, Pay Geri Alımı, Bedelsiz, Temettü.
+* **Fren / Tehlike Filtresi**: Devre Kesici, VBTS Tedbiri, Ceza veya Soruşturma alan hisselerde teknik AL sinyali gelse dahi alımı durdurur (`verify_stock_before_buy`).
 
-### 2. Kullanım Seçenekleri
+### 5. 🧠 Asimetrik Alpha Algoritmaları (`asymmetric_alpha_engine.py`)
+* **🩸 Stop Hunt / Likidite Avı Tespiti**: Büyük fonların küçük yatırımcıyı stop ettirip hisseyi yukarı sürdüğü anı yakalar.
+* **⏱️ Seans Zamanlama Muhafızı**: 10:00-10:25 açılış tuzaklarını engeller, 16:00-17:45 kurumsal kapanış dalgasını hedefler.
+* **🎯 Sektörel Arbitraj (Lead-Lag)**: Sektör lideri hisseler (AKBNK, GARAN) fırladığında geride kalanları (YKBNK, ISCTR) tespit eder.
+* **🪞 Sosyal Medya Ters İndikatörü (Anti-Hype)**: Herkesin konuştuğu tepe noktalarda alım yapmaz, sessizlikte pusuya yatar.
 
-#### A. İnteraktif Menü (Tavsiye Edilen)
-Hiçbir parametre girmeden sadece şu komutu çalıştırarak menü üzerinden seçim yapabilirsiniz:
+---
+
+## 🚀 Hızlı Başlangıç
+
+### 1. Kurulum
 ```powershell
-.\.venv\Scripts\python.exe main.py
+python -m venv .venv
+.\.venv\Scripts\pip install -r requirements.txt
+copy local_settings.py.example local_settings.py
+```
+*(local_settings.py içerisine Gmail Uygulama Şifrenizi tanımlayın)*
+
+### 2. Canlı Otonom Botu Başlatma (7/24 Nöbet)
+```powershell
+.\.venv\Scripts\python.exe live_bot_daemon.py
 ```
 
-#### B. Tek Bir Hisse İçin Backtest Çalıştırma
-Örnek: Türk Hava Yolları (`THYAO`) üzerinde SuperTrend stratejisini 2 yıllık geçmiş veriyle test etmek için:
+### 3. Modülleri Manuel Çalıştırma
 ```powershell
-.\.venv\Scripts\python.exe main.py backtest --ticker THYAO --strategy supertrend --period 2y
-```
-Test tamamlandığında hem terminalde detaylı özet rapor basılır hem de `reports/` klasöründe interaktif bir HTML grafik dosyası oluşturulur.
+# 19:00 Günlük Kapanış Raporunu Çalıştır:
+.\.venv\Scripts\python.exe daily_closing_report.py
 
-#### C. BIST 30 Canlı Piyasa Taraması (Screener)
-Günün potansiyel al-sat fırsatlarını tüm BIST 30 hisselerinde taramak için:
-```powershell
-.\.venv\Scripts\python.exe main.py screen --strategy ensemble
-```
+# 09:30 Sabah Seans Bültenini Çalıştır:
+.\.venv\Scripts\python.exe pre_market_bulletin.py
 
-#### D. Canlı Alarm Modunu Başlatma
-```powershell
-.\.venv\Scripts\python.exe main.py live --interval 60
+# 437 Hisselik Tüm BIST Pazarını Tara:
+.\.venv\Scripts\python.exe bist_market_scanner.py
+
+# Portföy Durumunu Ekranda Gör:
+.\.venv\Scripts\python.exe paper_trader.py
 ```
 
 ---
 
-## 📁 Proje Dosya Yapısı
+## 💻 İş Bilgisayarı Kurulumu
+Detaylı iş bilgisayarı kurulum adımları için [WORK_PC_SETUP.md](file:///C:/Users/g%C3%B6khan/.gemini/antigravity-ide/scratch/bist_algo_bot/WORK_PC_SETUP.md) dosyasına bakabilirsiniz.
+
+---
+
+## 📁 Proje Dosya Mimarisi
 
 ```
 bist_algo_bot/
 │
-├── config.py             # Hisse listeleri, komisyon, stop-loss ve genel ayarlar
-├── data_loader.py        # Veri çekme ve yerel önbellek yönetimi
-├── indicators.py         # RSI, MACD, SuperTrend, EMA, Bollinger, ATR hesaplamaları
-├── backtester.py         # Gelişmiş backtest simülasyonu ve performans metrikleri
-├── visualizer.py         # Plotly interaktif HTML raporlayıcı
-├── screener.py           # BIST 30 hisse tarayıcısı
-├── notifier.py           # Telegram ve konsol alarm servisi
-├── main.py               # Ana komut satırı ve interaktif menü
-├── requirements.txt      # Gerekli Python kütüphaneleri
+├── config.py                     # Sermaye (5k TL), risk, bildirim ve e-posta ayarları
+├── local_settings.py.example     # E-posta şifre şablonu (Gitignored)
+├── live_bot_daemon.py            # 7/24 Arka plan canlı daemon & zamanlayıcı (09:30 & 19:00)
+├── daily_closing_report.py       # 19:00 Günlük Kapanış Ekstresi & K/Z Raporlayıcı
+├── pre_market_bulletin.py        # 09:30 Seans Öncesi Bülten & Pusu Listesi
+├── paper_trader.py               # 1 Haftalık test sanal portföy ve ledger motoru
+├── bist_market_scanner.py        # 437 Hisselik TradingView yüksek hızlı pazar tarayıcısı
+├── sentiment_and_news_tracker.py # KAP, haber ve tüyo güvenlik radarı
+├── asymmetric_alpha_engine.py    # Stop Hunt, Sektör Arbitrajı ve Zamanlama motoru
+├── bist_360.py                   # 360 Derece Temel + Teknik analiz motoru
+├── macro_and_earnings_tracker.py # Dolar, Altın, Brent petrol ve bilanço takibi
+├── notifier.py                   # E-posta (HTML) ve Windows Toast bildirim servisi
+├── data_loader.py                # Yahoo Finance veri çekici ve önbellek
+├── requirements.txt              # Bağımlılıklar
+├── WORK_PC_SETUP.md              # İş bilgisayarı hızlı başlangıç kılavuzu
 │
-├── strategies/           # Modüler Stratejiler Klasörü
-│   ├── base.py           # Temel Strateji Arayüzü
-│   ├── supertrend_ema.py # SuperTrend & EMA Trend Stratejisi
-│   ├── rsi_bollinger.py  # RSI & Bollinger Bantları Ortalama Dönüş
-│   ├── macd_volume.py    # MACD + Hacim Patlaması Stratejisi
-│   └── ensemble.py       # Çoklu İndikatör Topluluk Stratejisi
-│
-├── data/                 # İndirilen verilerin önbellek alanı
-└── reports/              # Üretilen HTML grafik raporları
+├── data/                         # Portföy durumu (paper_portfolio.json) ve önbellek
+└── reports/                      # Üretilen günlük bülten ve kapanış raporları
 ```
-
----
-
-## ⚙️ Özelleştirme ve Strateji Ekleme
-
-Yeni bir al-sat stratejisi geliştirmek çok kolaydır:
-1. `strategies/` klasörü altına `my_strategy.py` oluşturun.
-2. `BaseStrategy` sınıfından türeterek `generate_signals(df)` metodunu yazın (`Signal=1` AL, `Signal=-1` SAT).
-3. `strategies/__init__.py` içerisindeki sözlüğe kaydedin.
-4. Hemen `python main.py backtest --strategy my_strategy` ile test edin!

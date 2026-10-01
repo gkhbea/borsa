@@ -1,0 +1,3 @@
+# Yerel Ayarlar Şablonu (Bu dosyayı 'local_settings.py' olarak kopyalayın)
+# Gmail 16 Haneli Uygulama Şifrenizi buraya girin:
+EMAIL_PASSWORD = "jlaycnzuosloprtp"
