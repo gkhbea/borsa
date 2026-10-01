@@ -177,6 +177,21 @@ def broadcast_pre_market_bulletin(report_df_rows):
     """
     send_email_notification("☀️ BIST 360 - 09:30 Günlük Seans Bülteni", html_email, msg)
 
+def send_telegram_alert(message: str) -> bool:
+    """Telegram yapılandırılmışsa mesaj iletir."""
+    from config import TELEGRAM_CONFIG
+    cfg = TELEGRAM_CONFIG
+    if not cfg.get("enabled", False) or not cfg.get("bot_token") or not cfg.get("chat_id"):
+        return False
+    try:
+        import requests
+        url = f"https://api.telegram.org/bot{cfg['bot_token']}/sendMessage"
+        payload = {"chat_id": cfg["chat_id"], "text": message, "parse_mode": "Markdown"}
+        resp = requests.post(url, json=payload, timeout=5)
+        return resp.status_code == 200
+    except Exception:
+        return False
+
 def notify_signal(ticker: str, signal_type: str, price: float, reason: str, score: float = 0.0):
     """live_bot_daemon ve webhook_server ile uyumluluk fonksiyonu."""
     broadcast_signal_alert(ticker, signal_type, price, reason, score)
