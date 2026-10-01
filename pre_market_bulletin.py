@@ -16,7 +16,10 @@ import pandas as pd
 from tabulate import tabulate
 from colorama import Fore, Style, init
 
-from config import BIST_30_TICKERS, DEFAULT_INITIAL_CAPITAL, MAX_POSITION_SIZE_PCT
+from config import (
+    BIST_30_TICKERS, ELITE_LIQUID_TICKERS, STRICT_A_PLUS_FILTER,
+    DEFAULT_INITIAL_CAPITAL, MAX_POSITION_SIZE_PCT
+)
 from data_loader import fetch_data
 from strategies.bist_sniper import BISTSniperStrategy
 from strategies.momentum_breakout import MomentumBreakoutStrategy
@@ -34,12 +37,15 @@ def generate_morning_bulletin():
 
     candidates = []
 
-    print(f"\n{Fore.YELLOW}==========================================================================================")
-    print(f"{Fore.WHITE}{Style.BRIGHT}  ☀️  BIST 360 SEANS ÖNCESİ ALGORİTMİK HİSSE LİSTESİ (SAAT 09:30 RAPORU)")
-    print(f"{Fore.YELLOW}=========================================================================================={Style.RESET_ALL}")
-    print(f"Toplam Sermaye: {DEFAULT_INITIAL_CAPITAL:,.0f} TL | Pozisyon Başına Ayrılan (%10 Kuralı): {slot_capital:,.0f} TL | Maksimum Risk Koruması\n")
+    # Hedef Hisse Havuzu: Sadece en derin, anında tek tuşla çıkılabilen Elit A+ Lokomotifler
+    target_pool = ELITE_LIQUID_TICKERS if STRICT_A_PLUS_FILTER else BIST_30_TICKERS
 
-    for ticker in BIST_30_TICKERS:
+    print(f"\n{Fore.YELLOW}==========================================================================================")
+    print(f"{Fore.WHITE}{Style.BRIGHT}  🛡️  BIST 360 SEÇİCİ A+ LİSTESİ (EN GÜVENLİ & ANINDA ÇIKILABİLİR LOKOMOTİFLER)")
+    print(f"{Fore.YELLOW}=========================================================================================={Style.RESET_ALL}")
+    print(f"Toplam Sermaye: {DEFAULT_INITIAL_CAPITAL:,.0f} TL | Pozisyon Tavanı: {slot_capital:,.0f} TL (%10) | Prensip: Zorlama Yok, Sadece A+\n")
+
+    for ticker in target_pool:
         clean_t = ticker.replace(".IS", "")
         df = fetch_data(ticker, period="6mo", interval="1d", use_cache=True)
         if df.empty or len(df) < 30:
@@ -119,8 +125,8 @@ def generate_morning_bulletin():
     # Sıralama: Önce Öncelik, sonra BIST 360 Skoru
     candidates.sort(key=lambda x: (x["priority"], float(x["score"])), reverse=True)
 
-    # İlk 5 hisseyi net tabloya dök
-    top_candidates = candidates[:6]
+    # İlla her şeye girmeyeceğiz: Sadece EN TEMİZ ilk 2 veya 3 Elit hisse
+    top_candidates = candidates[:3]
 
     display_rows = []
     for c in top_candidates:
@@ -129,12 +135,12 @@ def generate_morning_bulletin():
             "Öncelik": c["Durum"],
             "Pusu Fiyatı": c["Önerilen Pusu"],
             "Lot": c["Lot Sayısı"],
-            "Tutar": c["Maliyet"],
+            "Tutar (%10)": c["Maliyet"],
             "Zarar Kes (Stop)": c["Stop-Loss"],
             "Hedef 1 (+%6-8)": c["Hedef 1"],
             "Hedef 2 (+%15)": c["Hedef 2"],
-            "360 Skor": c["BIST 360"],
-            "Para Akışı": c["CMF (Para)"]
+            "Çıkış": "⚡ Anında (A+)",
+            "360 Skor": c["BIST 360"]
         })
 
     df_report = pd.DataFrame(display_rows)
@@ -147,10 +153,11 @@ def generate_morning_bulletin():
     except Exception as e:
         print(f"[UYARI] Bildirim gönderilemedi: {e}")
 
-    print(f"\n{Fore.GREEN}{Style.BRIGHT}💡 BROKER YÖNETİCİ NOTU (PORTFÖY DİSİPLİNİ):")
-    print(f"1. Sermaye Koruması: Her hisseye maksimum %10 (10.000 TL) tahsis edilir; tek bir işlemde portföy riske atılmaz.")
-    print(f"2. Stop-Loss seviyelerinin altına seans içi sarkmalarda kesinlikle inatlaşılmamalıdır (Maksimum kayıp işlem başına sadece ~300 TL!).")
-    print(f"3. Hedef 1'e ulaşıldığında pozisyonun %50'si realize edilip, stop seviyesi giriş fiyatına (başa baş) çekilmelidir.")
+    print(f"\n{Fore.GREEN}{Style.BRIGHT}💡 KIDEMLİ BROKER YÖNETİCİ NOTU (GARANTİ & NAKDE ÇIKIŞ DİSİPLİNİ):")
+    print(f"1. ⚡ Anında Çıkış Garantisi: Sadece BIST'in en derin mega-hisseleri seçilmiştir. Satış tuşuna bastığında 1 saniyede nakde geçebilirsin.")
+    print(f"2. 🛡️ Zorlama İşlem Yok: İlla tüm hisseleri almak zorunda değiliz; nakit de bir pozisyondur. Günde en fazla 1-2 A+ hisse yeterlidir.")
+    print(f"3. 💰 Maksimum %10 Kuralı: Pozisyon başına 10.000 TL tavan. Stop olsak dahi portföy kaybı sadece ~300 TL'dir (%0.3).")
+    print(f"4. 🎯 Hedef 1 Disiplini: +%6-8 kârda %50 satılır, stop maliyete çekilir, sıfır riskle trend izlenir.")
     print(f"==========================================================================================\n")
 
 if __name__ == "__main__":

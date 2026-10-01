@@ -20,8 +20,16 @@ BIST_30_TICKERS = [
     "TUPRS.IS", "VAKBN.IS", "VESTL.IS", "YKBNK.IS", "KONTR.IS"
 ]
 
-# Varsayılan Test ve İşlem Sembolü
-DEFAULT_TICKER = "THYAO.IS"
+# 🏆 ELİT A+ LİKİDİTE SEPETİ (Tek Tuşla Anında Çıkılabilen, En Güvenli Lokomotifler)
+# Bu hisselerde günlük hacim milyarlarca TL'dir; 1 saniyede kademe kaybetmeden nakde dönülebilir.
+ELITE_LIQUID_TICKERS = [
+    "THYAO.IS", "TUPRS.IS", "BIMAS.IS", "AKBNK.IS",
+    "GARAN.IS", "KCHOL.IS", "ISCTR.IS", "YKBNK.IS",
+    "ASELS.IS", "SAHOL.IS"
+]
+
+# Seçici İşlem Modu: Sadece A+ kurulum varsa işlem öner, yoksa nakitte bekle
+STRICT_A_PLUS_FILTER = True
 
 # Backtest ve Simülasyon Ayarları
 DEFAULT_INITIAL_CAPITAL = 100_000.0  # 100.000 TL başlangıç sermayesi
