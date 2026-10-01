@@ -45,7 +45,21 @@ def generate_morning_bulletin():
     print(f"• BIST 100 Regimi: {macro['regime']} (Son: {m_xu.get('last', 0):,.0f} | Günlük: {m_xu.get('change_pct', 0):+0.2f}%)")
     print(f"• Broker Görüşü  : {macro['broker_verdict']}")
     print(f"• Sektörel Dinamik: {macro['sector_note']}")
-    print(f"• Dolar/TL: {m_usd.get('last', 0):.2f} | Brent Petrol: ${m_brent.get('last', 0):.2f}\n")
+    print(f"• Dolar/TL: {m_usd.get('last', 0):.2f} | Brent Petrol: ${m_brent.get('last', 0):.2f}")
+
+    # 2. Asimetrik Akıllı Para ve Seans Kalkanı
+    try:
+        from asymmetric_alpha_engine import get_session_microstructure_guard, scan_sector_lead_lag, detect_liquidity_sweep
+        guard = get_session_microstructure_guard()
+        lags = scan_sector_lead_lag()
+        print(f"• ⏱️  Seans Saati Kalkanı: {guard['session_zone']} -> {guard['rule']}")
+        if lags:
+            for lag in lags:
+                print(f"• 🎯 Sektörel Artçı Fırsatı: {lag['leader']} ({lag['leader_perf']}) koptu -> {lag['follower']} ({lag['follower_perf']}) arkadan gelebilir!")
+        else:
+            print("• 🎯 Sektörel Ritim: Lider ve takipçiler dengeli seyrediyor.\n")
+    except Exception as e:
+        print(f"[UYARI] Asimetrik motor: {e}\n")
 
     # Portföy Dağılımı: 100.000 TL sermaye, Maksimum %10 Kuralı = Hisse başına 10.000 TL
     slot_capital = DEFAULT_INITIAL_CAPITAL * MAX_POSITION_SIZE_PCT
